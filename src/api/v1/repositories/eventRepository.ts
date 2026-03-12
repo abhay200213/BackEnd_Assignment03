@@ -1,5 +1,5 @@
 import { db } from "../../../../config/firebaseConfig";
-import { EVENTS_COLLECTION } from "../constants/eventConstants";
+import { EVENTS_COLLECTION } from "../../../constants/eventConstants";
 import { Event } from "../models/eventModel";
 
 export const createEventDocument = async (event: Event): Promise<Event> => {

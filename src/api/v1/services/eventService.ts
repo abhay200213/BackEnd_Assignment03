@@ -1,6 +1,12 @@
 import { CreateEventInput, Event, UpdateEventInput } from "../models/eventModel";
+import {
+  createEventDocument,
+  deleteEventDocumentById,
+  getAllEventDocuments,
+  getEventDocumentById,
+  updateEventDocumentById,
+} from "../repositories/eventRepository";
 
-const events: Event[] = [];
 let eventCounter = 1;
 
 const generateEventId = (): string => {
@@ -11,7 +17,7 @@ const toIsoString = (value: string | Date): string => {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 };
 
-export const createEvent = (input: CreateEventInput): Event => {
+export const createEvent = async (input: CreateEventInput): Promise<Event> => {
   const now = new Date().toISOString();
 
   const event: Event = {
@@ -26,23 +32,22 @@ export const createEvent = (input: CreateEventInput): Event => {
     updatedAt: now,
   };
 
-  events.push(event);
-  return event;
+  return await createEventDocument(event);
 };
 
-export const getAllEvents = (): Event[] => {
-  return events;
+export const getAllEvents = async (): Promise<Event[]> => {
+  return await getAllEventDocuments();
 };
 
-export const getEventById = (id: string): Event | null => {
-  return events.find((event) => event.id === id) ?? null;
+export const getEventById = async (id: string): Promise<Event | null> => {
+  return await getEventDocumentById(id);
 };
 
-export const updateEventById = (
+export const updateEventById = async (
   id: string,
   updates: UpdateEventInput
-): Event | null => {
-  const existingEvent = events.find((event) => event.id === id);
+): Promise<Event | null> => {
+  const existingEvent = await getEventDocumentById(id);
 
   if (!existingEvent) {
     return null;
@@ -56,27 +61,37 @@ export const updateEventById = (
     throw new Error('"registrationCount" must be less than or equal to ref:capacity');
   }
 
-  if (updates.name !== undefined) existingEvent.name = updates.name;
-  if (updates.date !== undefined) existingEvent.date = toIsoString(updates.date);
-  if (updates.capacity !== undefined) existingEvent.capacity = updates.capacity;
-  if (updates.registrationCount !== undefined) {
-    existingEvent.registrationCount = updates.registrationCount;
+  const updatedPayload: Partial<Event> = {
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (updates.name !== undefined) {
+    updatedPayload.name = updates.name;
   }
-  if (updates.status !== undefined) existingEvent.status = updates.status;
-  if (updates.category !== undefined) existingEvent.category = updates.category;
 
-  existingEvent.updatedAt = new Date().toISOString();
+  if (updates.date !== undefined) {
+    updatedPayload.date = toIsoString(updates.date);
+  }
 
-  return existingEvent;
+  if (updates.capacity !== undefined) {
+    updatedPayload.capacity = updates.capacity;
+  }
+
+  if (updates.registrationCount !== undefined) {
+    updatedPayload.registrationCount = updates.registrationCount;
+  }
+
+  if (updates.status !== undefined) {
+    updatedPayload.status = updates.status;
+  }
+
+  if (updates.category !== undefined) {
+    updatedPayload.category = updates.category;
+  }
+
+  return await updateEventDocumentById(id, updatedPayload);
 };
 
-export const deleteEventById = (id: string): boolean => {
-  const index = events.findIndex((event) => event.id === id);
-
-  if (index === -1) {
-    return false;
-  }
-
-  events.splice(index, 1);
-  return true;
+export const deleteEventById = async (id: string): Promise<boolean> => {
+  return await deleteEventDocumentById(id);
 };

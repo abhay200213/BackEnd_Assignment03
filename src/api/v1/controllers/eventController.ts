@@ -7,46 +7,70 @@ import {
   updateEventById,
 } from "../services/eventService";
 
-export const createEventHandler = (req: Request, res: Response): void => {
-  const event = createEvent(req.body);
+export const createEventHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const event = await createEvent(req.body);
 
-  res.status(201).json({
-    message: "Event created",
-    data: event,
-  });
-};
-
-export const getAllEventsHandler = (_req: Request, res: Response): void => {
-  const events = getAllEvents();
-
-  res.status(200).json({
-    message: "Events retrieved",
-    count: events.length,
-    data: events,
-  });
-};
-
-export const getEventByIdHandler = (req: Request, res: Response): void => {
-  const id = String(req.params.id);
-  const event = getEventById(id);
-
-  if (!event) {
-    res.status(404).json({
-      message: "Event not found",
+    res.status(201).json({
+      message: "Event created",
+      data: event,
     });
-    return;
-  }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create event";
 
-  res.status(200).json({
-    message: "Event retrieved",
-    data: event,
-  });
+    res.status(500).json({
+      message,
+    });
+  }
 };
 
-export const updateEventByIdHandler = (req: Request, res: Response): void => {
+export const getAllEventsHandler = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const events = await getAllEvents();
+
+    res.status(200).json({
+      message: "Events retrieved",
+      count: events.length,
+      data: events,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to retrieve events";
+
+    res.status(500).json({
+      message,
+    });
+  }
+};
+
+export const getEventByIdHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = String(req.params.id);
-    const event = updateEventById(id, req.body);
+    const event = await getEventById(id);
+
+    if (!event) {
+      res.status(404).json({
+        message: "Event not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Event retrieved",
+      data: event,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to retrieve event";
+
+    res.status(500).json({
+      message,
+    });
+  }
+};
+
+export const updateEventByIdHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const event = await updateEventById(id, req.body);
 
     if (!event) {
       res.status(404).json({
@@ -63,24 +87,39 @@ export const updateEventByIdHandler = (req: Request, res: Response): void => {
     const message =
       error instanceof Error ? error.message : "Invalid update request";
 
-    res.status(400).json({
-      message: `Validation error: ${message}`,
+    if (message.includes("registrationCount")) {
+      res.status(400).json({
+        message: `Validation error: ${message}`,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      message,
     });
   }
 };
 
-export const deleteEventByIdHandler = (req: Request, res: Response): void => {
-  const id = String(req.params.id);
-  const deleted = deleteEventById(id);
+export const deleteEventByIdHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const deleted = await deleteEventById(id);
 
-  if (!deleted) {
-    res.status(404).json({
-      message: "Event not found",
+    if (!deleted) {
+      res.status(404).json({
+        message: "Event not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Event deleted",
     });
-    return;
-  }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete event";
 
-  res.status(200).json({
-    message: "Event deleted",
-  });
+    res.status(500).json({
+      message,
+    });
+  }
 };
